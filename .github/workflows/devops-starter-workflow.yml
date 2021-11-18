@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    name: Build and Run 
+    name: Build and Run tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -34,12 +34,12 @@ jobs:
         npm install
         npm run build --if-present
 
-   # - name: Run unit tests
-   #   continue-on-error: false
-   #   run: |
-   #     cd Tests
-   #     npm install
-   #     gulp unittest
+    - name: Run unit tests
+      continue-on-error: false
+      run: |
+        cd Tests
+        npm install
+        gulp unittest
 
     - name: Creating artifact directories
       run: |
