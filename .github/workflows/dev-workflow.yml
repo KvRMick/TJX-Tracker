@@ -2,22 +2,21 @@ name: Build and Deploy node Express app to azure
 on:
   push:
     branches:
-      - master
       - Develop
 
 env:
-  AZURE_WEBAPP_NAME: "TJX-Tracker"    # set this to your application's name
+  AZURE_WEBAPP_NAME: "tjx-tracker-dev"    # set this to your application's name
   AZURE_WEBAPP_PACKAGE_PATH: "Application"      # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '8.11.1'                        # set this to the node version to use
-  RESOURCEGROUPNAME: "TJX-Tracker-rg"
+  NODE_VERSION: '10.14.1'                        # set this to the node version to use
+  RESOURCEGROUPNAME: "tjx-tracker-rg"
   LOCATION: "East US"
-  HOSTINGPLANNAME: "TJX-Tracker-plan"
+  HOSTINGPLANNAME: "TJX-Tracker-Dev-plan"
   APPINSIGHTLOCATION: "East US"
   SKU: "F1 Free"
 
 jobs:
   build:
-    name: Build and Run tests
+    name: Build and Run 
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -34,12 +33,12 @@ jobs:
         npm install
         npm run build --if-present
 
-    - name: Run unit tests
-      continue-on-error: false
-      run: |
-        cd Tests
-        npm install
-        gulp unittest
+   # - name: Run unit tests
+   #   continue-on-error: false
+   #   run: |
+   #     cd Tests
+   #     npm install
+   #     gulp unittest
 
     - name: Creating artifact directories
       run: |
