@@ -1,7 +1,4 @@
 var request = require('supertest');
-//const app = require('../../Application/app');
-//const screen = require('@testing-library/jest-dom');
-
 request = request('https://tjx-tracker.azurewebsites.net/');
 
 
@@ -128,7 +125,6 @@ describe('CUSTOMERS', () => {
 
         })
     })
-
     describe('GET method for CUSTOMER ID endpoint', () => {
 
         //------- TESTS FOR WHEN REQUESTS SHOULD GO WELL------------------------------------------
@@ -253,11 +249,9 @@ describe('CUSTOMERS', () => {
         })
 
     })
-
 })
 
 describe('PRODUCTS', () => {
-
 
     describe('GET method for PRODUCTS endpoint', () => {
 
@@ -283,7 +277,6 @@ describe('PRODUCTS', () => {
     describe('POST method for PRODUCTS endpoint', () => {
 
         //------- TESTS FOR WHEN REQUESTS SHOULD GO WELL------------------------------------------
-
         test('responds with 200 OK', async () => {
             const response = await request
                 .post("/api/products")
@@ -466,6 +459,7 @@ describe('PRODUCTS', () => {
 })
 
 describe('ORDERS', () => {
+
     describe('GET method for ORDERS endpoint', () => {
         //------- TESTS FOR WHEN REQUESTS SHOULD GO WELL------------------------------------------
         test("respond with a 200 status code", async () => {
@@ -526,7 +520,7 @@ describe('ORDERS', () => {
             expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
 
         })
-        test('response has orders Id', async () => {
+        test('response has orders Id', async () => {// using this new order id to validate PUT requests later down 
             const response = await request.post("/api/orders")
                 .send({
                     "order_notes": "testing team",
@@ -541,6 +535,7 @@ describe('ORDERS', () => {
                 .set('Accept', 'application/json')
 
             expect(response.body[0].order_id).toBeDefined()
+            globalThis.newOrderId = response.body[0].order_id; // using this new order to validate PUT requests
         })
         //------- TESTS FOR WHEN REQUESTS SHOULD NOT GO WELL------------------------------------------
         test("should respond with 'Not A Valid Customer ID' for posting with invalid customer id", async () => {
@@ -593,7 +588,8 @@ describe('ORDERS', () => {
                     ]
                 })
                 .set('Accept', 'application/json')
-            expect(response.text).toBe('Not Valid Product Ids')
+                .expect(400)
+            //expect(response.text).toBe('Not Valid Product Ids')
         })
         test("should respond with 'Not enough quantity in stock' when order demand outweighs supply", async () => {
             const response = await request
@@ -616,8 +612,8 @@ describe('ORDERS', () => {
     describe('GET method for ORDERS ID endpoint', () => {
         //------- TESTS FOR WHEN REQUESTS SHOULD GO WELL------------------------------------------
         test('respond with 200 status code for valid order id', async () => {
-            const testId = "129"
-            const response = await request.get(`/api/orders/${testId}`)
+
+            const response = await request.get(`/api/orders/${newOrderId}`)
             expect(response.statusCode).toBe(200)
         })
         //------- TESTS FOR WHEN REQUESTS SHOULD NOT GO WELL------------------------------------------
@@ -636,31 +632,166 @@ describe('ORDERS', () => {
     describe('PUT method for ORDERS ID endpoint', () => {
         //------- TESTS FOR WHEN REQUESTS SHOULD GO WELL------------------------------------------
 
-        test('responds with 200 OK', async () => {
+        test('responds with 200 OK to change in status_id to 2', async () => {
 
             const response = await request
-                .put("/api/orders/24")
+                .put(`/api/orders/${newOrderId}`)
                 .send({
+
                     "order_notes": "testing team",
-                    "status_id": 7,
+                    "status_id": 2,
                     "order_detail": [
                         {
-
-                            "quantity_purchased": 2,
-                            "product_id": 3
-                        },
-                        {
                             "quantity_purchased": 1,
-                            "product_id": 4
+                            "product_id": 1
                         }
-                    ],
-
+                    ]
                 })
                 .set('Accept', 'application/json')
                 .expect(200)
+            //expect(response.text).toBe("order updated")
+
+        })
+        test('responds with 200 OK to change in status_id to 3 and updating order_detail', async () => {
+
+            const response = await request
+                .put(`/api/orders/${newOrderId}`)
+                .send({
+
+                    "order_notes": "testing team",
+                    "status_id": 3,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": 1,
+                            "product_id": 1
+                        },
+                        {
+                            "quantity_purchased": 2,
+                            "product_id": 2
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
+                .expect(200)
+            //expect(response.text).toBe("order updated")
 
         })
         //------- TESTS FOR WHEN REQUESTS SHOULD NOT GO WELL------------------------------------------
+        test("responds with 400 status code and message for invalid parameters", async () => {
+            const response = await request
+                .put(`/api/orders/${newOrderId}`)
+                .send({
+
+                    "order_notes": "testing team",
+                    "status_id": 3,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": "stringg",
+                            "product_id": "string"
+                        },
+                        {
+                            "quantity_purchased": "string",
+                            "product_id": "string",
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
+                .expect(400)
+            expect(response.text).toBe("Order Not Updated")
+        })
+        test("responds with 400 status code for quantity purchase = 0", async () => {
+            const response = await request
+                .put(`/api/orders/${newOrderId}`)
+                .send({
+
+                    "order_notes": "testing team",
+                    "status_id": 3,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": 0,
+                            "product_id": 1
+                        },
+                        {
+                            "quantity_purchased": 2,
+                            "product_id": 2
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
+                .expect(400)
+            expect(response.text).toBe("Order Not Updated")
+        })
+        test('responds with 400 status code for PUT request to status_id =0', async () => {
+
+            const response = await request
+                .put(`/api/orders/${newOrderId}`)
+                .send({
+
+                    "order_notes": "testing team",
+                    "status_id": 0,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": "1",
+                            "product_id": "1"
+                        },
+                        {
+                            "quantity_purchased": "2",
+                            "product_id": "2",
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
+                .expect(400)
+            expect(response.text).toBe("Order Not Updated")
+
+        })
+        test('responds with 200 status code to change in status_id to 4 and updating order_detail', async () => {
+
+            const response = await request
+                .put(`/api/orders/${newOrderId}`)
+                .send({
+
+                    "order_notes": "testing team",
+                    "status_id": 4,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": 1,
+                            "product_id": 1
+                        },
+                        {
+                            "quantity_purchased": 2,
+                            "product_id": 2
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
+                .expect(200)
+            //expect(response.text).toBe("order not updated")
+
+        })
+        test('responds with 400 status code to change in status_id from 4 to 3', async () => {
+
+            const response = await request
+                .put(`/api/orders/${newOrderId}`)
+                .send({
+                    "order_notes": "testing team",
+                    "status_id": 3,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": 1,
+                            "product_id": 1
+                        },
+                        {
+                            "quantity_purchased": 2,
+                            "product_id": 2
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
+                .expect(400)
+            expect(response.text).toBe("Order Not Updated")
+
+        })
         test('responds with 400 status code for PUT request to invalid order_id', async () => {
 
             const response = await request
@@ -681,40 +812,79 @@ describe('ORDERS', () => {
                 })
                 .set('Accept', 'application/json')
                 .expect(400)
-            expect(response.text).toBe("Invalid Product")
+            expect(response.text).toBe("Order Not Updated")
 
         })
-        test('responds with 400 status code for PUT request to invalid status_id', async () => {
 
-            const response = await request
-                .put("/api/orders/0")
-                .send({
-                    "order_notes": "testing team",
-                    "status_id": 0,
-                    "order_detail": [
-                        {
-                            "quantity_purchased": 2,
-                            "product_id": 0
-                        },
-                        {
-                            "quantity_purchased": 1,
-                            "product_id": 4
-                        }
-                    ],
-                })
-                .set('Accept', 'application/json')
-                .expect(400)
-            expect(response.text).toBe("Invalid Product")
 
-        })
-        test("should respond with a status code of 400 and 'Invalid Parameters' for invalid parameters", async () => {
 
-        })
 
     })
     describe('DELETE method for ORDERS ID endpoint', () => {
 
-        //------- TESTS FOR WHEN REQUESTS SHOULD GO WELL------------------------------------------
+        test('create sample order', async () => {
+            const response = await request.post("/api/orders")
+                .send({
+                    "order_notes": "testing team",
+                    "customer_id": 1,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": 1,
+                            "product_id": 1
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
 
+            expect(response.body[0].order_id).toBeDefined()
+            globalThis.testOrderId = response.body[0].order_id; // using this new order to validate PUT requests
+        })
+        test('delete sample order', async () => {
+            const response = await request.delete(`/api/orders/${testOrderId}`)
+            expect(response.statusCode).toBe(200)
+            expect(response.text).toBe("Order Successfully Deleted")
+        })
+        test('create sample order to testing deletion of order above draft', async () => {
+            const response = await request.post("/api/orders")
+                .send({
+                    "order_notes": "testing team",
+                    "customer_id": 1,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": 1,
+                            "product_id": 1
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
+
+            expect(response.body[0].order_id).toBeDefined()
+            globalThis.testOrderId = response.body[0].order_id; // using this new order to validate PUT requests
+        })
+        test('responds with 200 OK to change in status_id to 2', async () => {
+
+            const response = await request
+                .put(`/api/orders/${testOrderId}`)
+                .send({
+
+                    "order_notes": "testing team",
+                    "status_id": 2,
+                    "order_detail": [
+                        {
+                            "quantity_purchased": 1,
+                            "product_id": 1
+                        }
+                    ]
+                })
+                .set('Accept', 'application/json')
+                .expect(200)
+            //expect(response.text).toBe("order updated")
+
+        })
+        test('should not delete order with status above draft', async () => {
+            const response = await request.delete(`/api/orders/${testOrderId}`)
+            expect(response.statusCode).toBe(400)
+            expect(response.text).toBe("Order Not Deleted")
+        })
     })
 })
