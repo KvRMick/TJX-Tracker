@@ -1,21 +1,22 @@
+let url = "http://tjx-tracker-dev.azurewebsites.net/csr/login";
 
-// Starter function for login
-// Uses a hard coded credentials (bad practice but used to have a flow)
+
+
 $(".submit").on("click" , () => 
 {   
-    // Get the value of the fields
-    let username = $(".un").val();
-    let password = $(".pass").val();
-    console.log(username + "" + password);
-    // Check the values against a dumb input 
-    if (username === "admin" && password === "admin" )
-    {
-        window.location.href = ("../views/customers.html");
-        console.log("Redirect");
-    }
-    else {
-        $(".un").val("");
-        $(".pass").val("");
-        alert("Wrong credentials");
-    }
+    let username = document.getElementById("username").value;
+    let password = document.getElementById("password").value;
+    axios.post(`${url}`, { email: `${username}`, rep_password: `${password}` }) .then(function (response) { 
+        console.log(response.data); 
+        window.localStorage.setItem('sessionToken', response.data.sessionToken);
+        if (response.data.sessionToken){
+            window.location.href = ("../views/customers.html");
+        }
+    }) 
+        .catch(function (error) { 
+            console.log(error); 
+            window.alert("Wrong credentials. Please try again!");
+        });
+
+
 });
